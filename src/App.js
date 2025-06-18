@@ -1,18 +1,49 @@
-// src/App.js
+// src/App.js - Version temporaire sans ThemeSelector
 import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
 import AddForm from './components/AddForm';
 import DirectoryList from './components/DirectoryList';
 import Statistics from './components/Statistics';
+// import ThemeSelector from './components/ThemeSelector'; // COMMENTÉ TEMPORAIREMENT
+import PresentationPage from './components/PresentationPage';
 import './App.css';
 import './Background.css';
 
 function App() {
+  const [showPresentation, setShowPresentation] = useState(true);
   const [people, setPeople] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterBy, setFilterBy] = useState('all'); // all, name, job
-  const [sortBy, setSortBy] = useState('name'); // name, job, recent
-  const [viewMode, setViewMode] = useState('grid'); // grid, list
+  const [filterBy, setFilterBy] = useState('all');
+  const [sortBy, setSortBy] = useState('name');
+  const [viewMode, setViewMode] = useState('grid');
+  const [currentTheme, setCurrentTheme] = useState('default');
+
+  // Vérifier si la présentation a déjà été vue
+  useEffect(() => {
+    const hasSeenPresentation = localStorage.getItem('annuaire-presentation-seen');
+    if (hasSeenPresentation === 'true') {
+      setShowPresentation(false);
+    }
+  }, []);
+
+  // Fonction appelée quand la présentation se termine
+  const handlePresentationComplete = () => {
+    localStorage.setItem('annuaire-presentation-seen', 'true');
+    setShowPresentation(false);
+  };
+
+  // Charger le thème depuis localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('annuaire-theme');
+    if (savedTheme) {
+      setCurrentTheme(savedTheme);
+    }
+  }, []);
+
+  // Sauvegarder le thème dans localStorage
+  useEffect(() => {
+    localStorage.setItem('annuaire-theme', currentTheme);
+  }, [currentTheme]);
 
   // Charger les données depuis localStorage au démarrage
   useEffect(() => {
@@ -27,35 +58,35 @@ function App() {
           name: 'Marie Dubois',
           job: 'Développeuse Frontend',
           email: 'marie.dubois@entreprise.com',
-          dateAdded: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() // Il y a 2 jours
+          dateAdded: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
         },
         {
           id: 2,
           name: 'Pierre Martin',
           job: 'Designer UX/UI',
           email: 'pierre.martin@entreprise.com',
-          dateAdded: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString() // Il y a 5 jours
+          dateAdded: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
         },
         {
           id: 3,
           name: 'Sophie Laurent',
           job: 'Chef de Projet',
           email: 'sophie.laurent@entreprise.com',
-          dateAdded: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() // Hier
+          dateAdded: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
         },
         {
           id: 4,
           name: 'Thomas Durand',
           job: 'Développeur Backend',
           email: 'thomas.durand@entreprise.com',
-          dateAdded: new Date().toISOString() // Aujourd'hui
+          dateAdded: new Date().toISOString()
         },
         {
           id: 5,
           name: 'Claire Moreau',
           job: 'Data Analyst',
           email: 'claire.moreau@entreprise.com',
-          dateAdded: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() // Il y a 3 jours
+          dateAdded: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
         }
       ];
       setPeople(sampleData);
@@ -64,8 +95,10 @@ function App() {
 
   // Sauvegarder dans localStorage à chaque modification
   useEffect(() => {
-    localStorage.setItem('annuaire-people', JSON.stringify(people));
-  }, [people]);
+    if (!showPresentation) {
+      localStorage.setItem('annuaire-people', JSON.stringify(people));
+    }
+  }, [people, showPresentation]);
 
   // Ajouter une personne
   const addPerson = (newPerson) => {
@@ -86,6 +119,11 @@ function App() {
     setPeople(prev => prev.map(person => 
       person.id === id ? { ...person, ...updatedData } : person
     ));
+  };
+
+  // Changer de thème
+  const handleThemeChange = (newTheme) => {
+    setCurrentTheme(newTheme);
   };
 
   // Filtrer les données
@@ -116,8 +154,16 @@ function App() {
     }
   });
 
+  // Si la présentation doit être affichée
+  if (showPresentation) {
+    return <PresentationPage onComplete={handlePresentationComplete} />;
+  }
+
+  // Classe CSS pour le thème
+  const themeClass = currentTheme === 'default' ? '' : `theme-${currentTheme}`;
+
   return (
-    <div className="app">
+    <div className={`app ${themeClass}`}>
       {/* Arrière-plan avec animations multiples */}
       <div className="background-animation">
         <div className="floating-shapes">
@@ -157,6 +203,27 @@ function App() {
         <div className="wave"></div>
       </div>
 
+      {/* Sélecteur de thème flottant - COMMENTÉ TEMPORAIREMENT */}
+      {/*
+      <div className="theme-selector-container">
+        <ThemeSelector 
+          currentTheme={currentTheme}
+          onThemeChange={handleThemeChange}
+        />
+      </div>
+      */}
+
+      {/* Bouton pour revoir la présentation */}
+      <div className="presentation-replay-container">
+        <button
+          onClick={() => setShowPresentation(true)}
+          className="presentation-replay-btn"
+          title="Revoir la présentation"
+        >
+          🎭 Présentation
+        </button>
+      </div>
+
       <div className="container">
         <Header 
           searchTerm={searchTerm}
@@ -192,6 +259,73 @@ function App() {
           </div>
         )}
       </div>
+
+      <style jsx>{`
+        .presentation-replay-container {
+          position: fixed;
+          top: 20px;
+          left: 20px;
+          z-index: 100;
+          animation: slideInLeft 0.6s ease-out;
+        }
+
+        .presentation-replay-btn {
+          background: rgba(255, 255, 255, 0.15);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 12px;
+          color: white;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          backdrop-filter: blur(10px);
+          padding: 12px 20px;
+          font-size: 14px;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .presentation-replay-btn:hover {
+          background: rgba(255, 255, 255, 0.25);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        @keyframes slideInLeft {
+          from {
+            opacity: 0;
+            transform: translateX(-100px);
+          }
+          to {
+            opacity: 1;
+            transform: translateX(0);
+          }
+        }
+
+        @media (max-width: 768px) {
+          .presentation-replay-container {
+            top: 10px;
+            left: 10px;
+          }
+
+          .presentation-replay-btn {
+            padding: 10px 16px;
+            font-size: 12px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .presentation-replay-container {
+            top: 5px;
+            left: 5px;
+          }
+
+          .presentation-replay-btn {
+            padding: 8px 12px;
+            font-size: 11px;
+          }
+        }
+      `}</style>
     </div>
   );
 }

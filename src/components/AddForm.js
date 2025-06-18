@@ -1,4 +1,4 @@
-// src/components/AddForm.js
+// src/components/AddForm.js - Version corrigée
 import React, { useState } from 'react';
 import { Plus, User, Briefcase, Mail, X, Check, AlertCircle } from 'lucide-react';
 
@@ -9,121 +9,67 @@ const AddForm = ({ onAddPerson }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [touchedFields, setTouchedFields] = useState({});
 
-  // Validation des champs en temps réel
-  const validateField = (fieldName, value) => {
-    switch (fieldName) {
-      case 'name':
-        if (!value.trim()) return 'Le nom est requis';
-        if (value.trim().length < 2) return 'Le nom doit contenir au moins 2 caractères';
-        if (value.trim().length > 50) return 'Le nom ne peut pas dépasser 50 caractères';
-        if (!/^[a-zA-ZÀ-ÿ\s'-]+$/.test(value.trim())) return 'Le nom ne peut contenir que des lettres, espaces, apostrophes et tirets';
-        return '';
-      
-      case 'job':
-        if (!value.trim()) return 'Le métier est requis';
-        if (value.trim().length < 2) return 'Le métier doit contenir au moins 2 caractères';
-        if (value.trim().length > 100) return 'Le métier ne peut pas dépasser 100 caractères';
-        return '';
-      
-      case 'email':
-        if (!value.trim()) return 'L\'email est requis';
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(value.trim())) return 'L\'email n\'est pas valide';
-        if (value.trim().length > 100) return 'L\'email ne peut pas dépasser 100 caractères';
-        return '';
-      
-      default:
-        return '';
-    }
-  };
-
-  // Validation complète du formulaire
+  // Validation simple
   const validateForm = () => {
-    const newErrors = {
-      name: validateField('name', name),
-      job: validateField('job', job),
-      email: validateField('email', email)
-    };
+    const newErrors = {};
 
-    // Supprimer les erreurs vides
-    Object.keys(newErrors).forEach(key => {
-      if (!newErrors[key]) delete newErrors[key];
-    });
+    if (!name.trim()) {
+      newErrors.name = 'Le nom est requis';
+    }
+    if (!job.trim()) {
+      newErrors.job = 'Le métier est requis';
+    }
+    if (!email.trim()) {
+      newErrors.email = 'L\'email est requis';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      newErrors.email = 'L\'email n\'est pas valide';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  // Gestion du changement de champ avec validation
-  const handleFieldChange = (fieldName, value) => {
-    switch (fieldName) {
-      case 'name':
-        setName(value);
-        break;
-      case 'job':
-        setJob(value);
-        break;
-      case 'email':
-        setEmail(value);
-        break;
-    }
-
-    // Validation en temps réel si le champ a été touché
-    if (touchedFields[fieldName]) {
-      const error = validateField(fieldName, value);
-      setErrors(prev => ({
-        ...prev,
-        [fieldName]: error
-      }));
-    }
-  };
-
-  // Gestion du blur (quand l'utilisateur quitte le champ)
-  const handleFieldBlur = (fieldName, value) => {
-    setTouchedFields(prev => ({ ...prev, [fieldName]: true }));
-    const error = validateField(fieldName, value);
-    setErrors(prev => ({
-      ...prev,
-      [fieldName]: error
-    }));
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Marquer tous les champs comme touchés
-    setTouchedFields({ name: true, job: true, email: true });
+    console.log('🚀 Tentative de soumission du formulaire');
+    console.log('Données:', { name, job, email });
     
     if (!validateForm()) {
+      console.log('❌ Validation échouée:', errors);
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Simulation d'une requête async avec délai
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Simulation d'un délai
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const newPerson = {
-        id: Date.now() + Math.random(), // ID plus unique
+        id: Date.now() + Math.random(), // ID unique
         name: name.trim(),
         job: job.trim(),
         email: email.trim().toLowerCase()
       };
 
-      onAddPerson(newPerson);
-
-      // Reset complet du formulaire
-      resetForm();
+      console.log('✅ Nouvelle personne créée:', newPerson);
       
-      // Fermer le modal avec animation
-      setTimeout(() => setIsOpen(false), 300);
+      // Appel de la fonction parent
+      if (onAddPerson && typeof onAddPerson === 'function') {
+        onAddPerson(newPerson);
+        console.log('✅ Fonction onAddPerson appelée avec succès');
+        
+        // Reset du formulaire
+        resetForm();
+        setIsOpen(false);
+      } else {
+        console.error('❌ onAddPerson n\'est pas une fonction valide');
+      }
       
     } catch (error) {
-      console.error('Erreur lors de l\'ajout:', error);
-      // Ici vous pourriez gérer les erreurs de l'API
+      console.error('❌ Erreur lors de l\'ajout:', error);
     } finally {
       setIsSubmitting(false);
     }
@@ -134,7 +80,6 @@ const AddForm = ({ onAddPerson }) => {
     setJob('');
     setEmail('');
     setErrors({});
-    setTouchedFields({});
   };
 
   const handleCancel = () => {
@@ -144,16 +89,11 @@ const AddForm = ({ onAddPerson }) => {
 
   const handleOpenForm = () => {
     setIsOpen(true);
-    // Focus automatique sur le premier champ après un court délai
-    setTimeout(() => {
-      const firstInput = document.querySelector('.form-modal input[type="text"]');
-      if (firstInput) firstInput.focus();
-    }, 300);
   };
 
   return (
     <div className="add-form-container">
-      {/* Bouton d'ouverture avec animation améliorée */}
+      {/* Bouton d'ouverture */}
       <button
         onClick={handleOpenForm}
         className="add-button"
@@ -162,32 +102,23 @@ const AddForm = ({ onAddPerson }) => {
         <div className="add-button-content">
           <div className="add-icon-wrapper">
             <Plus className="add-icon" />
-            <div className="add-icon-bg"></div>
-            <div className="add-icon-pulse"></div>
           </div>
           <div className="add-text">
             <span className="add-title">Ajouter un collaborateur</span>
             <span className="add-subtitle">Enrichir votre annuaire professionnel</span>
           </div>
-          <div className="add-arrow">→</div>
         </div>
       </button>
 
-      {/* Modal/Formulaire avec overlay */}
+      {/* Modal/Formulaire */}
       {isOpen && (
         <div className="form-overlay" onClick={(e) => e.target === e.currentTarget && handleCancel()}>
           <div className="form-modal">
-            {/* En-tête du modal */}
+            {/* En-tête */}
             <div className="form-header">
               <div className="form-title">
-                <div className="form-title-icon-wrapper">
-                  <User className="form-title-icon" />
-                  <div className="form-title-icon-bg"></div>
-                </div>
-                <div className="form-title-text">
-                  <h3>Nouveau Collaborateur</h3>
-                  <p>Ajoutez les informations du nouveau membre de l'équipe</p>
-                </div>
+                <User className="form-title-icon" />
+                <h3>Nouveau Collaborateur</h3>
               </div>
               <button 
                 onClick={handleCancel}
@@ -199,7 +130,7 @@ const AddForm = ({ onAddPerson }) => {
               </button>
             </div>
 
-            {/* Formulaire principal */}
+            {/* Formulaire */}
             <form onSubmit={handleSubmit} className="form-content">
               <div className="form-grid">
                 {/* Champ Nom */}
@@ -208,33 +139,20 @@ const AddForm = ({ onAddPerson }) => {
                     <User className="label-icon" />
                     Nom complet *
                   </label>
-                  <div className="input-wrapper">
-                    <input
-                      type="text"
-                      value={name}
-                      onChange={(e) => handleFieldChange('name', e.target.value)}
-                      onBlur={(e) => handleFieldBlur('name', e.target.value)}
-                      className={`form-input ${errors.name ? 'error' : ''} ${name && !errors.name ? 'success' : ''}`}
-                      placeholder="Ex: Marie Dubois"
-                      disabled={isSubmitting}
-                      maxLength={50}
-                    />
-                    {name && !errors.name && (
-                      <Check className="success-icon" />
-                    )}
-                    {errors.name && (
-                      <AlertCircle className="error-icon" />
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className={`form-input ${errors.name ? 'error' : ''}`}
+                    placeholder="Ex: Marie Dubois"
+                    disabled={isSubmitting}
+                  />
                   {errors.name && (
                     <span className="error-message">
-                      <AlertCircle className="error-message-icon" />
+                      <AlertCircle className="error-icon" />
                       {errors.name}
                     </span>
                   )}
-                  <div className="char-counter">
-                    {name.length}/50
-                  </div>
                 </div>
 
                 {/* Champ Métier */}
@@ -243,33 +161,20 @@ const AddForm = ({ onAddPerson }) => {
                     <Briefcase className="label-icon" />
                     Métier *
                   </label>
-                  <div className="input-wrapper">
-                    <input
-                      type="text"
-                      value={job}
-                      onChange={(e) => handleFieldChange('job', e.target.value)}
-                      onBlur={(e) => handleFieldBlur('job', e.target.value)}
-                      className={`form-input ${errors.job ? 'error' : ''} ${job && !errors.job ? 'success' : ''}`}
-                      placeholder="Ex: Développeur Frontend"
-                      disabled={isSubmitting}
-                      maxLength={100}
-                    />
-                    {job && !errors.job && (
-                      <Check className="success-icon" />
-                    )}
-                    {errors.job && (
-                      <AlertCircle className="error-icon" />
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={job}
+                    onChange={(e) => setJob(e.target.value)}
+                    className={`form-input ${errors.job ? 'error' : ''}`}
+                    placeholder="Ex: Développeur Frontend"
+                    disabled={isSubmitting}
+                  />
                   {errors.job && (
                     <span className="error-message">
-                      <AlertCircle className="error-message-icon" />
+                      <AlertCircle className="error-icon" />
                       {errors.job}
                     </span>
                   )}
-                  <div className="char-counter">
-                    {job.length}/100
-                  </div>
                 </div>
 
                 {/* Champ Email */}
@@ -278,49 +183,21 @@ const AddForm = ({ onAddPerson }) => {
                     <Mail className="label-icon" />
                     Email professionnel *
                   </label>
-                  <div className="input-wrapper">
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => handleFieldChange('email', e.target.value)}
-                      onBlur={(e) => handleFieldBlur('email', e.target.value)}
-                      className={`form-input ${errors.email ? 'error' : ''} ${email && !errors.email ? 'success' : ''}`}
-                      placeholder="Ex: marie.dubois@entreprise.com"
-                      disabled={isSubmitting}
-                      maxLength={100}
-                    />
-                    {email && !errors.email && (
-                      <Check className="success-icon" />
-                    )}
-                    {errors.email && (
-                      <AlertCircle className="error-icon" />
-                    )}
-                  </div>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={`form-input ${errors.email ? 'error' : ''}`}
+                    placeholder="Ex: marie.dubois@entreprise.com"
+                    disabled={isSubmitting}
+                  />
                   {errors.email && (
                     <span className="error-message">
-                      <AlertCircle className="error-message-icon" />
+                      <AlertCircle className="error-icon" />
                       {errors.email}
                     </span>
                   )}
-                  <div className="char-counter">
-                    {email.length}/100
-                  </div>
                 </div>
-              </div>
-
-              {/* Indicateur de progression */}
-              <div className="form-progress">
-                <div className="progress-bar">
-                  <div 
-                    className="progress-fill"
-                    style={{
-                      width: `${((name ? 1 : 0) + (job ? 1 : 0) + (email ? 1 : 0)) / 3 * 100}%`
-                    }}
-                  ></div>
-                </div>
-                <span className="progress-text">
-                  {Math.round(((name ? 1 : 0) + (job ? 1 : 0) + (email ? 1 : 0)) / 3 * 100)}% complété
-                </span>
               </div>
 
               {/* Boutons d'action */}
@@ -336,7 +213,7 @@ const AddForm = ({ onAddPerson }) => {
                 <button
                   type="submit"
                   className="submit-btn"
-                  disabled={isSubmitting || Object.keys(errors).length > 0 || !name || !job || !email}
+                  disabled={isSubmitting}
                 >
                   {isSubmitting ? (
                     <div className="loading-content">
@@ -346,7 +223,7 @@ const AddForm = ({ onAddPerson }) => {
                   ) : (
                     <div className="submit-content">
                       <Check className="submit-icon" />
-                      <span>Ajouter le collaborateur</span>
+                      <span>Ajouter</span>
                     </div>
                   )}
                 </button>
@@ -368,37 +245,21 @@ const AddForm = ({ onAddPerson }) => {
           border-radius: 20px;
           padding: 2rem;
           cursor: pointer;
-          transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+          transition: all 0.3s ease;
           box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3);
           position: relative;
           overflow: hidden;
         }
 
-        .add-button:hover {
+        .add-button:hover:not(:disabled) {
           transform: translateY(-4px);
           box-shadow: 0 20px 50px rgba(16, 185, 129, 0.4);
-          background: linear-gradient(135deg, #059669 0%, #047857 100%);
         }
 
         .add-button:disabled {
           opacity: 0.7;
           cursor: not-allowed;
           transform: none;
-        }
-
-        .add-button::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-          transition: all 0.6s;
-        }
-
-        .add-button:hover::before {
-          left: 100%;
         }
 
         .add-button-content {
@@ -410,7 +271,6 @@ const AddForm = ({ onAddPerson }) => {
         }
 
         .add-icon-wrapper {
-          position: relative;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -425,36 +285,6 @@ const AddForm = ({ onAddPerson }) => {
           width: 28px;
           height: 28px;
           color: white;
-          z-index: 3;
-        }
-
-        .add-icon-bg {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 16px;
-          animation: iconPulse 2s ease-in-out infinite;
-        }
-
-        .add-icon-pulse {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 16px;
-          animation: iconPulse 2s ease-in-out infinite 1s;
-        }
-
-        @keyframes iconPulse {
-          0%, 100% {
-            transform: scale(1);
-            opacity: 1;
-          }
-          50% {
-            transform: scale(1.2);
-            opacity: 0.6;
-          }
         }
 
         .add-text {
@@ -468,25 +298,13 @@ const AddForm = ({ onAddPerson }) => {
           font-size: 1.4rem;
           font-weight: 700;
           color: white;
-          display: block;
           margin-bottom: 0.25rem;
         }
 
         .add-subtitle {
           font-size: 1rem;
           color: rgba(255, 255, 255, 0.8);
-          display: block;
           line-height: 1.4;
-        }
-
-        .add-arrow {
-          font-size: 1.5rem;
-          color: white;
-          transition: transform 0.3s ease;
-        }
-
-        .add-button:hover .add-arrow {
-          transform: translateX(8px);
         }
 
         .form-overlay {
@@ -501,18 +319,16 @@ const AddForm = ({ onAddPerson }) => {
           justify-content: center;
           z-index: 1000;
           padding: 1rem;
-          animation: overlayFadeIn 0.3s ease-out;
           backdrop-filter: blur(4px);
+          animation: overlayFadeIn 0.3s ease-out;
         }
 
         @keyframes overlayFadeIn {
           from {
             opacity: 0;
-            backdrop-filter: blur(0px);
           }
           to {
             opacity: 1;
-            backdrop-filter: blur(4px);
           }
         }
 
@@ -520,17 +336,17 @@ const AddForm = ({ onAddPerson }) => {
           background: white;
           border-radius: 24px;
           width: 100%;
-          max-width: 700px;
+          max-width: 600px;
           max-height: 90vh;
           overflow-y: auto;
           box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
-          animation: modalSlideIn 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+          animation: modalSlideIn 0.3s ease-out;
         }
 
         @keyframes modalSlideIn {
           from {
             opacity: 0;
-            transform: translateY(-50px) scale(0.95);
+            transform: translateY(-30px) scale(0.95);
           }
           to {
             opacity: 1;
@@ -554,56 +370,17 @@ const AddForm = ({ onAddPerson }) => {
           gap: 1rem;
         }
 
-        .form-title-icon-wrapper {
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 50px;
-          height: 50px;
-          background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-          border-radius: 12px;
-        }
-
         .form-title-icon {
           width: 24px;
           height: 24px;
-          color: white;
-          z-index: 2;
+          color: #4a5568;
         }
 
-        .form-title-icon-bg {
-          position: absolute;
-          width: 100%;
-          height: 100%;
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 12px;
-          animation: titleIconGlow 2s ease-in-out infinite;
-        }
-
-        @keyframes titleIconGlow {
-          0%, 100% {
-            transform: scale(1);
-            opacity: 1;
-          }
-          50% {
-            transform: scale(1.1);
-            opacity: 0.8;
-          }
-        }
-
-        .form-title-text h3 {
+        .form-title h3 {
           margin: 0;
           font-size: 1.5rem;
           font-weight: 700;
           color: #2d3748;
-        }
-
-        .form-title-text p {
-          margin: 0;
-          font-size: 0.9rem;
-          color: #6b7280;
-          margin-top: 0.25rem;
         }
 
         .close-button {
@@ -620,7 +397,6 @@ const AddForm = ({ onAddPerson }) => {
 
         .close-button:hover:not(:disabled) {
           background: #f7fafc;
-          transform: scale(1.1);
         }
 
         .close-button:disabled {
@@ -665,15 +441,9 @@ const AddForm = ({ onAddPerson }) => {
           color: #6b7280;
         }
 
-        .input-wrapper {
-          position: relative;
-          display: flex;
-          align-items: center;
-        }
-
         .form-input {
           width: 100%;
-          padding: 1rem 3rem 1rem 1rem;
+          padding: 1rem;
           border: 2px solid #e5e7eb;
           border-radius: 12px;
           font-size: 1rem;
@@ -693,29 +463,9 @@ const AddForm = ({ onAddPerson }) => {
           background: #fef2f2;
         }
 
-        .form-input.success {
-          border-color: #10b981;
-          background: #f0fdf4;
-        }
-
         .form-input:disabled {
           opacity: 0.6;
           cursor: not-allowed;
-        }
-
-        .success-icon, .error-icon {
-          position: absolute;
-          right: 1rem;
-          width: 20px;
-          height: 20px;
-        }
-
-        .success-icon {
-          color: #10b981;
-        }
-
-        .error-icon {
-          color: #ef4444;
         }
 
         .error-message {
@@ -728,49 +478,10 @@ const AddForm = ({ onAddPerson }) => {
           font-weight: 500;
         }
 
-        .error-message-icon {
+        .error-icon {
           width: 14px;
           height: 14px;
           flex-shrink: 0;
-        }
-
-        .char-counter {
-          font-size: 0.75rem;
-          color: #9ca3af;
-          text-align: right;
-          margin-top: 0.25rem;
-        }
-
-        .form-progress {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          margin-bottom: 2rem;
-          padding: 1rem;
-          background: #f8fafc;
-          border-radius: 12px;
-        }
-
-        .progress-bar {
-          flex: 1;
-          height: 6px;
-          background: #e5e7eb;
-          border-radius: 3px;
-          overflow: hidden;
-        }
-
-        .progress-fill {
-          height: 100%;
-          background: linear-gradient(90deg, #10b981, #059669);
-          border-radius: 3px;
-          transition: width 0.5s ease;
-        }
-
-        .progress-text {
-          font-size: 0.85rem;
-          font-weight: 600;
-          color: #374151;
-          white-space: nowrap;
         }
 
         .form-actions {
@@ -796,7 +507,6 @@ const AddForm = ({ onAddPerson }) => {
         .cancel-btn:hover:not(:disabled) {
           border-color: #d1d5db;
           background: #f9fafb;
-          transform: translateY(-1px);
         }
 
         .cancel-btn:disabled {
@@ -816,19 +526,19 @@ const AddForm = ({ onAddPerson }) => {
           display: flex;
           align-items: center;
           gap: 0.75rem;
-          min-width: 200px;
+          min-width: 150px;
           justify-content: center;
           font-size: 1rem;
         }
 
         .submit-btn:hover:not(:disabled) {
           background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-          transform: translateY(-2px);
+          transform: translateY(-1px);
           box-shadow: 0 10px 25px rgba(59, 130, 246, 0.3);
         }
 
         .submit-btn:disabled {
-          opacity: 0.6;
+          opacity: 0.7;
           cursor: not-allowed;
           transform: none;
         }
@@ -884,44 +594,12 @@ const AddForm = ({ onAddPerson }) => {
             text-align: center;
           }
 
-          .add-arrow {
-            display: none;
-          }
-
           .form-header {
             padding: 1.5rem;
           }
 
           .form-content {
             padding: 1.5rem;
-          }
-
-          .form-title {
-            flex-direction: column;
-            gap: 0.75rem;
-            text-align: center;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .add-button {
-            padding: 1.5rem;
-          }
-
-          .add-title {
-            font-size: 1.2rem;
-          }
-
-          .add-subtitle {
-            font-size: 0.9rem;
-          }
-
-          .form-modal {
-            border-radius: 16px;
-          }
-
-          .form-header {
-            border-radius: 16px 16px 0 0;
           }
         }
       `}</style>
